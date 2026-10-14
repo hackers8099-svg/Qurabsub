@@ -1,0 +1,58 @@
+
+name: Build QuranClip APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download project files
+        uses: actions/checkout@v4
+
+      - name: Extract QuranClip ZIP
+        run: |
+          unzip -o QuranClip.zip -d .
+          ls -la QuranClip
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: QuranClip
+        run: npm install
+
+      - name: Create Android project
+        working-directory: QuranClip
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        working-directory: QuranClip
+        run: npx cap sync android
+
+      - name: Build APK
+        working-directory: QuranClip/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuranClip-APK
+          path: QuranClip/android/app/build/outputs/apk/debug/app-debug.apk
